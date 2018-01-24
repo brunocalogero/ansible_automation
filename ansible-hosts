@@ -1,0 +1,9 @@
+[all:vars]
+ansible_python_interpreter=/usr/bin/python
+
+[local]
+localhost ansible_connection=local
+
+
+[sjc02-21-sw1]
+sjc02-21-sw1.cisco.com ansible_connection=ssh ansible_user= ansible_ssh_pass=

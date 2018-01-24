@@ -1,0 +1,7 @@
+MAC,DESKTOP PORT,CDP NEIGHBOR,CDP NEIGHBOR PORT
+{% for mac in big_macs %}
+{%   set dport = (output_addr.results[loop.index0].stdout[0] | parse_cli_textfsm('./text_fsm_templates/textfsm.template') | first).DESTINATION_PORT %}
+{%   set neighbor = (output_cdp.results[loop.index0].stdout[0] | parse_cli_textfsm('./text_fsm_templates/textfsm2.textfsm') | first).NEIGHBOR %}
+{%   set cdp_port = (output_port.results[loop.index0].stdout[0] | parse_cli_textfsm('./text_fsm_templates/textfsm.template') | first ).DESTINATION_PORT %}
+{{ mac ~ "," ~ dport ~ "," ~ neighbor ~ "," ~ cdp_port }}
+{% endfor %}

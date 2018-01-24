@@ -1,0 +1,50 @@
+---
+- hosts: localhost
+  gather_facts: no
+  #connection: local
+  vars:
+    mac_addresses:
+    - insert_mac_address_here
+    - insert_mac_address_here
+    aggregation_gw: insert_aggregation_gw_hostname_here
+  tasks:
+  - name: OBTAIN LOGIN CREDENTIALS
+    include_vars: "./secrets.yml"
+
+  - name: GETTING PORT FROM DESKTOP GW GIVEN MAC-ADDRESS OF PHONE
+    ios_command:
+      username: "{{ credentials.username }}"
+      password: "{{ credentials.password }}"
+      host: "{{ aggregation_gw }}"
+      commands:
+      - show mac address-table address {{ item }}
+    with_items:
+    - "{{ mac_addresses }}"
+    register: output_addr
+
+  - name: GETTING CDP NEIGHBOR OF PORT TO OBTAIN SWITCH PHONE IS CONNECTED TO
+    ios_command:
+      username: "{{ credentials.username }}"
+      password: "{{ credentials.password }}"
+      host: "{{ aggregation_gw }}"
+      commands:
+      - show cdp neighbors {{ (item.stdout[0] | parse_cli_textfsm('./text_fsm_templates/textfsm.template') | first).DESTINATION_PORT }}
+    with_items:
+    - "{{ output_addr.results }}"
+    register: output_cdp
+
+  - name: CONNECT TO SWITCH AND CHECK WHAT INTERFACE THE PHONE IS CONNECTED TO
+    ios_command:
+      username: "{{ credentials.username }}"
+      password: "{{ credentials.password }}"
+      host: "{{ (item.0.stdout[0] | parse_cli_textfsm('./text_fsm_templates/textfsm2.textfsm') | first).NEIGHBOR }}"
+      commands:
+      - show mac address-table address {{ item.1 }}
+    with_together:
+    - "{{ output_cdp.results }}"
+    - "{{ mac_addresses }}"
+    register: output_port
+
+  - template:
+      src: report.txt.j2
+      dest: ./report.csv
